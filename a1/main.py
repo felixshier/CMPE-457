@@ -50,7 +50,7 @@ windowWidth  = 600 # window dimensions
 windowHeight =  800
 
 imgDir      = 'images'
-imgFilename = 'mandrill.png'
+imgFilename = 'pup.jpg'
 
 loadedImage  = None  # image originally loaded
 currentImage = None  # image being displayed
@@ -90,8 +90,26 @@ def transformImage( oldImage, newImage, forwardTransform ):
     # value, which is black in that colourspace.
 
     # [YOUR CODE HERE]
-    
 
+    # loop through pixels
+    for x in range(width):
+      for y in range(height):
+
+        # set T_inv as inverse transformation matrix
+        T = forwardTransform
+        T_inv = np.linalg.inv(T)
+        
+        # find (x,y) in oldImage using (x',y') in newImage
+        newPoint3D = np.array([x, y, 1])
+        oldPoint3D = np.dot(T_inv, newPoint3D)
+        oldPoint3D = oldPoint3D / oldPoint3D[-1]
+
+        # map pixels
+        if (oldPoint3D[0] <= 0) or (oldPoint3D[0] >= width) or (oldPoint3D[1] <= 0) or (oldPoint3D[1] >= height):
+          dstPixels[x,y] = (0,128,128)
+        else:
+          dstPixels[x,y] = srcPixels[oldPoint3D[0], oldPoint3D[1]]
+    
 
 # Scale an image by s around its centre
 
@@ -110,6 +128,24 @@ def scaleImage( oldImage, newImage, s ):
     cy = oldImage.size[1]/2
 
     # [ YOUR CODE HERE ]
+
+    T1 = np.array( [[1,0,cx],
+                   [0,1,cy],
+                   [0,0,1]] )
+
+    T2 = np.array( [[s,0,0],
+                   [0,s,0],
+                   [0,0,1]] )
+
+    T3 = np.array( [[1,0,-cx],
+                   [0,1,-cy],
+                   [0,0,1]] )
+
+    T = np.dot(np.dot(T1, T2), T3)
+
+    # Call the generic transformation code
+
+    transformImage( oldImage, newImage, T )
     
   
 
@@ -121,7 +157,27 @@ def rotateImage( oldImage, newImage, theta ):
     # very similar to scaleImage(), so do that function first.
     
     # [ YOUR CODE HERE ]
+
+    cx = oldImage.size[0]/2 # image centre
+    cy = oldImage.size[1]/2
   
+    T1 = np.array( [[1,0,cx],
+                   [0,1,cy],
+                   [0,0,1]] )
+
+    T2 = np.array( [[math.cos(theta),-math.sin(theta),0],
+                   [math.sin(theta),math.cos(theta),0],
+                   [0,0,1]] )
+
+    T3 = np.array( [[1,0,-cx],
+                   [0,1,-cy],
+                   [0,0,1]] )
+
+    T = np.dot(np.dot(T1, T2), T3)
+
+    # Call the generic transformation code
+
+    transformImage( oldImage, newImage, T )
 
     
 def translateImage( oldImage, newImage, x, y ):
