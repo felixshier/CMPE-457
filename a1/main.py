@@ -55,7 +55,10 @@ imgFilename = 'pup.jpg'
 loadedImage  = None  # image originally loaded
 currentImage = None  # image being displayed
 
-
+# initialize global total transformations variable
+#T = [[1, 0, 0], 
+    #[0, 1, 0],
+    #[0, 0, 1]]
 
 # File dialog (doesn't work on Mac OSX)
 
@@ -91,14 +94,20 @@ def transformImage( oldImage, newImage, forwardTransform ):
 
     # [YOUR CODE HERE]
 
+    # get global T
+    #global T
+
+    # add new transform to total transformations T
+    #T = np.dot(forwardTransform, T)
+
+    # set T_inv as inverse transformation matrix
+    #T_inv = np.linalg.inv(T)
+
+    T_inv = np.linalg.inv(forwardTransform)
+
     # loop through pixels
     for x in range(width):
       for y in range(height):
-
-        # set T_inv as inverse transformation matrix
-        T = forwardTransform
-        T_inv = np.linalg.inv(T)
-        
         # find (x,y) in oldImage using (x',y') in newImage
         newPoint3D = np.array([x, y, 1])
         oldPoint3D = np.dot(T_inv, newPoint3D)
@@ -109,7 +118,6 @@ def transformImage( oldImage, newImage, forwardTransform ):
           dstPixels[x,y] = (0,128,128)
         else:
           dstPixels[x,y] = srcPixels[oldPoint3D[0], oldPoint3D[1]]
-    
 
 # Scale an image by s around its centre
 
