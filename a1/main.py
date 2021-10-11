@@ -57,8 +57,8 @@ currentImage = None  # image being displayed
 
 # initialize past transformations variable
 T_p = [[1, 0, 0], 
-    [0, 1, 0],
-    [0, 0, 1]]
+       [0, 1, 0],
+       [0, 0, 1]]
 
 # initialize current transformation variable
 T_c = None
@@ -100,17 +100,24 @@ def transformImage( oldImage, newImage, forwardTransform ):
     # set T_inv as inverse transformation matrix
     T_inv = np.linalg.inv(forwardTransform)
 
+    ## backward projection ##
+
     # loop through pixels
     for x in range(width):
       for y in range(height):
-        # find (x,y) in oldImage using (x',y') in newImage
+        # map each 2D point (x,y) to the 3D point (x,y,k) where k = 1
         newPoint3D = np.array([x, y, 1])
+        # use T_inv to find what point (u,v,w) in old image is mapped to (x,y,k) in new image
         oldPoint3D = np.dot(T_inv, newPoint3D)
+        # divide by w to revert back to 2D coordinates
         oldPoint3D = oldPoint3D / oldPoint3D[-1]
 
         # map pixels
-        if (oldPoint3D[0] <= 0) or (oldPoint3D[0] >= width) or (oldPoint3D[1] <= 0) or (oldPoint3D[1] >= height):
+
+        # if (u,v) is outside of old image - set corresponding (x,y) pixel value to be black
+        if (oldPoint3D[0] < 0) or (oldPoint3D[0] >= width) or (oldPoint3D[1] < 0) or (oldPoint3D[1] >= height):
           dstPixels[x,y] = (0,128,128)
+        # if (u,v) is in old image - set corresponding (x,y) pixel value to be equal to (u,v) pixel value
         else:
           dstPixels[x,y] = srcPixels[oldPoint3D[0], oldPoint3D[1]]
 
@@ -118,6 +125,7 @@ def transformImage( oldImage, newImage, forwardTransform ):
 
 def scaleImage( oldImage, newImage, s ):
 
+    # use gobal variables T_c (current transformation) and T_p (past transformations)
     global T_c, T_p
 
     print( 'scale by %f' % s )
@@ -128,30 +136,35 @@ def scaleImage( oldImage, newImage, s ):
     # do any more than set up the transformation and call
     # transformImage().  You can use Numpy's 'dot' function to
     # multiply matrices.
-  
-    cx = oldImage.size[0]/2 # image centre
+
+    # image centre
+    cx = oldImage.size[0]/2
     cy = oldImage.size[1]/2
 
     # [ YOUR CODE HERE ]
 
+    # transformation 1: move image cx pixels right and cy pixels up (move origin to center)
     T1 = np.array( [[1,0,cx],
                    [0,1,cy],
                    [0,0,1]] )
 
+    # transformation 2: scale image by a factor of s in the x and y directions (from origin)
     T2 = np.array( [[s,0,0],
                    [0,s,0],
                    [0,0,1]] )
 
+    # transformation 3: move image cx pixels left and cy pixels down (move center to origin)
     T3 = np.array( [[1,0,-cx],
                    [0,1,-cy],
                    [0,0,1]] )
 
+    # combine transformations to obtain new transformation (note the order: T3 applied to image first)
     T = np.dot(np.dot(T1, T2), T3)
 
-    # current transformation = past transformations * new transformation
+    # current transformation = new transformation * past transformations
     T_c = np.dot(T, T_p)
 
-    # Call the generic transformation code
+    # Call the generic transformation code using current transformation
 
     transformImage( oldImage, newImage, T_c )
     
@@ -159,6 +172,7 @@ def scaleImage( oldImage, newImage, s ):
 
 def rotateImage( oldImage, newImage, theta ):
 
+    # use gobal variables T_c (current transformation) and T_p (past transformations)
     global T_c, T_p
     
     print( 'rotate by %f degrees' % (theta*180/3.14159) )
@@ -168,33 +182,39 @@ def rotateImage( oldImage, newImage, theta ):
     
     # [ YOUR CODE HERE ]
 
-    cx = oldImage.size[0]/2 # image centre
+    # image centre
+    cx = oldImage.size[0]/2
     cy = oldImage.size[1]/2
-  
+
+    # transformation 1: move image cx pixels right and cy pixels up (move origin to center)
     T1 = np.array( [[1,0,cx],
                    [0,1,cy],
                    [0,0,1]] )
 
+    # transformation 2: rotate image by theta radians (around origin)
     T2 = np.array( [[math.cos(theta),-math.sin(theta),0],
                    [math.sin(theta),math.cos(theta),0],
                    [0,0,1]] )
 
+    # transformation 3: move image cx pixels left and cy pixels down (move center to origin)
     T3 = np.array( [[1,0,-cx],
                    [0,1,-cy],
                    [0,0,1]] )
 
+    # combine transformations to obtain new transformation (note the order: T3 applied to image first)
     T = np.dot(np.dot(T1, T2), T3)
 
-    # current transformation = past transformations * new transformation
+    # current transformation = new transformation * past transformations
     T_c = np.dot(T, T_p)
 
-    # Call the generic transformation code
+    # Call the generic transformation code using current transformation
 
     transformImage( oldImage, newImage, T_c )
 
     
 def translateImage( oldImage, newImage, x, y ):
 
+    # use gobal variables T_c (current transformation) and T_p (past transformations)
     global T_c, T_p
     
     print( 'translate by %f,%f' % (x,y) )
@@ -205,10 +225,10 @@ def translateImage( oldImage, newImage, x, y ):
                    [0,1,y],
                    [0,0,1]] )
 
-    # current transformation = past transformations * new transformation
+    # current transformation = new transformation * past transformations
     T_c = np.dot(T, T_p)
 
-    # Call the generic transformation code
+    # Call the generic transformation code using current transformation
 
     transformImage( oldImage, newImage, T_c )
 
@@ -331,6 +351,7 @@ def mouseButtonCallback( window, btn, action, keyModifiers ):
 
         button = None
 
+        # once mouse is released - set T_p (past transformations) to T_c (current transformation)
         T_p = T_c
 
     
