@@ -1,6 +1,6 @@
 # CMPE 457 ASSIGNMENT 1
 
-## Student 1
+## Student
 
 - Name: Felix Shier
 - NetID: 17FAS
