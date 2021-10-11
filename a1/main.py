@@ -55,10 +55,13 @@ imgFilename = 'pup.jpg'
 loadedImage  = None  # image originally loaded
 currentImage = None  # image being displayed
 
-# initialize global total transformations variable
-#T = [[1, 0, 0], 
-    #[0, 1, 0],
-    #[0, 0, 1]]
+# initialize past transformations variable
+T_p = [[1, 0, 0], 
+    [0, 1, 0],
+    [0, 0, 1]]
+
+# initialize current transformation variable
+T_c = None
 
 # File dialog (doesn't work on Mac OSX)
 
@@ -94,15 +97,7 @@ def transformImage( oldImage, newImage, forwardTransform ):
 
     # [YOUR CODE HERE]
 
-    # get global T
-    #global T
-
-    # add new transform to total transformations T
-    #T = np.dot(forwardTransform, T)
-
     # set T_inv as inverse transformation matrix
-    #T_inv = np.linalg.inv(T)
-
     T_inv = np.linalg.inv(forwardTransform)
 
     # loop through pixels
@@ -122,6 +117,8 @@ def transformImage( oldImage, newImage, forwardTransform ):
 # Scale an image by s around its centre
 
 def scaleImage( oldImage, newImage, s ):
+
+    global T_c, T_p
 
     print( 'scale by %f' % s )
 
@@ -151,14 +148,19 @@ def scaleImage( oldImage, newImage, s ):
 
     T = np.dot(np.dot(T1, T2), T3)
 
+    # current transformation = past transformations * new transformation
+    T_c = np.dot(T, T_p)
+
     # Call the generic transformation code
 
-    transformImage( oldImage, newImage, T )
+    transformImage( oldImage, newImage, T_c )
     
   
 
 def rotateImage( oldImage, newImage, theta ):
 
+    global T_c, T_p
+    
     print( 'rotate by %f degrees' % (theta*180/3.14159) )
 
     # Rotate the image around its centre by angle 'theta'.  This is
@@ -183,13 +185,18 @@ def rotateImage( oldImage, newImage, theta ):
 
     T = np.dot(np.dot(T1, T2), T3)
 
+    # current transformation = past transformations * new transformation
+    T_c = np.dot(T, T_p)
+
     # Call the generic transformation code
 
-    transformImage( oldImage, newImage, T )
+    transformImage( oldImage, newImage, T_c )
 
     
 def translateImage( oldImage, newImage, x, y ):
 
+    global T_c, T_p
+    
     print( 'translate by %f,%f' % (x,y) )
 
     # Compute the homogeneous transformation
@@ -198,9 +205,12 @@ def translateImage( oldImage, newImage, x, y ):
                    [0,1,y],
                    [0,0,1]] )
 
+    # current transformation = past transformations * new transformation
+    T_c = np.dot(T, T_p)
+
     # Call the generic transformation code
 
-    transformImage( oldImage, newImage, T )
+    transformImage( oldImage, newImage, T_c )
 
 
 
@@ -310,7 +320,7 @@ button = None
 
 def mouseButtonCallback( window, btn, action, keyModifiers ):
 
-    global button, initX, initY
+    global button, initX, initY, T_p, T_c
 
     if action == glfw.PRESS:
 
@@ -320,6 +330,8 @@ def mouseButtonCallback( window, btn, action, keyModifiers ):
     elif action == glfw.RELEASE:
 
         button = None
+
+        T_p = T_c
 
     
 
