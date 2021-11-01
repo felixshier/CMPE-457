@@ -144,10 +144,15 @@ def compute():
   # Forward FT
 
   print( '1. compute FT' )
+
+  imageFT = forwardFT(image)
       
   # Compute magnitudes and find the maximum (excluding the DC component)
 
   print( '2. computing FT magnitudes' )
+
+  imageFT_mags = np.abs(imageFT)
+  imageFT_mags_max = np.max(imageFT_mags[1:])
 
   # Zero the components that are less than 40% of the max
 
@@ -155,6 +160,8 @@ def compute():
 
   if gridImageFT is None:
     gridImageFT = np.zeros( (height,width), dtype=np.complex_ )
+
+    
 
   # Find (angle, distance) to each peak
   #
