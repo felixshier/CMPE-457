@@ -22,7 +22,7 @@ except:
   sys.exit(0)
 
 try: # PyOpenGL
-  from OpenGL.GLUT import *
+  #from OpenGL.GLUT import *
   from OpenGL.GL import *
   from OpenGL.GLU import *
 except:
@@ -624,8 +624,8 @@ def outputImage( image, filename, outputMagnitudes, isFT, invert ):
 def drawText( x, y, text ):
 
   glRasterPos( x, y )
-  for ch in text:
-    glutBitmapCharacter( GLUT_BITMAP_8_BY_13, ord(ch) )
+  #for ch in text:
+    #glutBitmapCharacter( GLUT_BITMAP_8_BY_13, ord(ch) )
 
     
 
@@ -817,7 +817,7 @@ def main_interactive():
 
     # Use GLUT for bitmapped characters
 
-    glutInit()
+    #glutInit()
 
     # Callbacks
     
