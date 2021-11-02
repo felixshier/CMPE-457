@@ -151,7 +151,7 @@ def compute():
 
   print( '2. computing FT magnitudes' )
 
-  imageFT_mags = np.abs(imageFT)
+  imageFT_mags = [np.abs(val) for val in imageFT]
   imageFT_mags_max = np.max(imageFT_mags[1:])
 
   # Zero the components that are less than 40% of the max
@@ -160,11 +160,21 @@ def compute():
 
   if gridImageFT is None:
     gridImageFT = np.zeros( (height,width), dtype=np.complex_ )
+  
+  thresh = 0.4* imageFT_mags_max
 
-    
+  nonZeroVals = []
+
+  for i in range(height):
+    for j in range(width):
+      if imageFT_mags[i][j] >= thresh:
+         gridImageFT[i,j] = imageFT_mags[i][j]
+         nonZeroVals.append((i,j))
+      else:
+        gridImageFT[i,j] = 0
 
   # Find (angle, distance) to each peak
-  #
+  # 
   # lines = [ (angle1,distance1), (angle2,distance2) ]
 
   lines = [[1,2],[3,4]]
