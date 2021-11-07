@@ -165,13 +165,13 @@ def compute():
 
   nonZeroVals = []
 
-  for i in range(height):
-    for j in range(width):
-      if imageFT_mags[i][j] >= thresh:
-         gridImageFT[i,j] = imageFT_mags[i][j]
-         nonZeroVals.append((i,j))
+  for v in range(height):
+    for u in range(width):
+      if imageFT_mags[v][u] >= thresh:
+         gridImageFT[v,u] = imageFT_mags[v][u]
+         nonZeroVals.append((v,u))
       else:
-        gridImageFT[i,j] = 0
+        gridImageFT[v,u] = 0
   
   print(np.shape(gridImageFT))
   print(np.shape(nonZeroVals))
@@ -182,6 +182,15 @@ def compute():
   lines = [[1,2],[3,4]]
 
   print( '4. finding angles and distances of grid lines' )
+
+  # NEED TO INITIALIZE gridImageFT_normal
+
+  for v in range(height):
+    for u in range(width):
+      gridImageFT_normal[v, round(u*width/height)] = gridImageFT[v,u]
+      
+  
+  print(np.shape(gridImageFT_normal))
 
   # Convert back to spatial domain to get a grid-like image
 
