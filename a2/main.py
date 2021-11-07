@@ -172,7 +172,9 @@ def compute():
          nonZeroVals.append((i,j))
       else:
         gridImageFT[i,j] = 0
-
+  
+  print(np.shape(gridImageFT))
+  print(np.shape(nonZeroVals))
   # Find (angle, distance) to each peak
   # 
   # lines = [ (angle1,distance1), (angle2,distance2) ]
