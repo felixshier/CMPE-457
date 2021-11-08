@@ -133,6 +133,25 @@ resultImage = None              # the final image
 # image in your own code, rather than call some NumPy function to do
 # the iteration for you.
 
+# getForwardPixel and getBackwardPixel used in part 6 to retrieve pixel values on opposite sides of a grid line
+
+def getForwardPixel(x, y, image1, image2, x_increment, y_increment):
+  height = image.shape[0]
+  width  = image.shape[1]
+  for k in range(min(height-y, width-x)):
+    if (image1[y + k*y_increment][x + k*x_increment] < 16):
+      nextPixel = image2[y + k*y_increment][x + k*x_increment]
+      return nextPixel
+  return 0
+
+def getBackwardPixel(x, y, image1, image2, x_increment, y_increment):
+  height = image.shape[0]
+  width  = image.shape[1]
+  for k in range(min(y, x)):
+    if (image1[y - k*y_increment][x - k*x_increment] < 16):
+      nextPixel = image2[y - k*y_increment][x - k*x_increment]
+      return nextPixel
+  return 0
 
 def compute():
 
@@ -221,6 +240,8 @@ def compute():
   gridLine1_distances = []
   gridLine2_distances = []
 
+  nonZeroVals_normal = [(u, v*width/height) for (u,v) in nonZeroVals_normal]
+
   for (u, v) in nonZeroVals_normal:
     # calculate distance and angle for each point
     angle = math.atan2(v,u)
@@ -267,10 +288,24 @@ def compute():
   if resultImage is None:
     resultImage = image.copy()
 
+  # angle at which we will look for the next non-grid pixels
+  searchAngle = (angle1+angle2)/2
+
+  # x increment at which we will look for the next non-grid pixels
+  # x component of searchAngle
+  x_increment = 1
+
+  # y increment at which we will look for the next non-grid pixels
+  # y component of searchAngle when x component is 1
+  y_increment = round(np.tan(searchAngle))
+
   for y in range(height):
     for x in range(width):
       if gridImage[y][x] > 16:
-        resultImage[y][x] = 0
+        # get pixels on opposite sides of the gridline and average them
+        pixel1 = getForwardPixel(x, y, gridImage, resultImage, x_increment, y_increment)
+        pixel2 = getBackwardPixel(x, y, gridImage, resultImage, x_increment, y_increment)
+        resultImage[y][x] = (pixel1+pixel2)/2
 
   print( 'done' )
 
