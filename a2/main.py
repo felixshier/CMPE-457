@@ -141,6 +141,9 @@ def compute():
   height = image.shape[0]
   width  = image.shape[1]
 
+  print(height)
+  print(width)
+
   # Forward FT
 
   print( '1. compute FT' )
@@ -151,8 +154,20 @@ def compute():
 
   print( '2. computing FT magnitudes' )
 
-  imageFT_mags = [np.abs(val) for val in imageFT]
-  imageFT_mags_max = np.max(imageFT_mags[1:])
+  # store array of imageFT magnitudes
+  imageFT_mags = np.absolute(imageFT)
+
+  # store dc component
+  dc = imageFT_mags[0][0]
+
+  # set dc component to 0 temporarily
+  imageFT_mags[0][0] = 0
+  
+  # get max magnitude
+  imageFT_mags_max = np.max(imageFT_mags)
+
+  # restore dc component
+  imageFT_mags[0][0] = dc
 
   # Zero the components that are less than 40% of the max
 
@@ -161,20 +176,24 @@ def compute():
   if gridImageFT is None:
     gridImageFT = np.zeros( (height,width), dtype=np.complex_ )
   
-  thresh = 0.4* imageFT_mags_max
+  thresh = 0.4 * imageFT_mags_max
 
   nonZeroVals = []
+
+  #set dc component to 0 temporarily
+  imageFT_mags[0][0] = 0
 
   for v in range(height):
     for u in range(width):
       if imageFT_mags[v][u] >= thresh:
-         gridImageFT[v,u] = imageFT_mags[v][u]
-         nonZeroVals.append((v,u))
+         gridImageFT[v][u] = imageFT[v][u]
+         nonZeroVals.append((u, v))
       else:
-        gridImageFT[v,u] = 0
+        gridImageFT[v][u] = 0
   
-  print(np.shape(gridImageFT))
-  print(np.shape(nonZeroVals))
+  #restore dc component
+  imageFT_mags[0][0] = dc
+  
   # Find (angle, distance) to each peak
   # 
   # lines = [ (angle1,distance1), (angle2,distance2) ]
@@ -183,14 +202,54 @@ def compute():
 
   print( '4. finding angles and distances of grid lines' )
 
-  # NEED TO INITIALIZE gridImageFT_normal
+  # normalize coordinates of non-zero mags
 
-  for v in range(height):
-    for u in range(width):
-      gridImageFT_normal[v, round(u*width/height)] = gridImageFT[v,u]
-      
+  nonZeroVals_normal = []
+
+  for (u, v) in nonZeroVals:
+    if (u > width/2) and (v > height/2):
+      nonZeroVals_normal.append((u-width, v-height))
+    elif (u > width/2) and (v < height/2):
+      nonZeroVals_normal.append((u-width, v))
+    elif (u < width/2) and (v > height/2):
+      nonZeroVals_normal.append((u, v-height))
+    else:
+      nonZeroVals_normal.append((u, v))
   
-  print(np.shape(gridImageFT_normal))
+  gridLine1_angles = []
+  gridLine2_angles = []
+  gridLine1_distances = []
+  gridLine2_distances = []
+
+  for (u, v) in nonZeroVals_normal:
+    # calculate distance and angle for each point
+    angle = math.atan2(v,u)
+    distance = np.sqrt(u**2 + v**2)
+    # ensure positive angles
+    if angle < 0:
+      angle = angle + math.pi
+    if angle == math.pi:
+      angle = angle - math.pi
+    # set gridline 1 to line with angle >= pi/2
+    if angle >= math.pi/2:
+      gridLine1_angles.append(angle)
+      gridLine1_distances.append(distance)
+    # set gridline 2 to line with angle < pi/2
+    else:
+      gridLine2_angles.append(angle)
+      gridLine2_distances.append(distance)
+
+  angle1 = sum(gridLine1_angles)/len(gridLine1_angles)
+  angle2 = sum(gridLine2_angles)/len(gridLine2_angles)
+
+  distance1 = min(gridLine1_distances)
+  distance2 = min(gridLine2_distances)
+
+  lines[0][0] = angle1*180/math.pi
+  lines[1][0] = angle2*180/math.pi
+
+  lines[0][1] = distance1
+  lines[1][1] = distance2
 
   # Convert back to spatial domain to get a grid-like image
 
@@ -199,12 +258,19 @@ def compute():
   if gridImage is None:
     gridImage = np.zeros( (height,width), dtype=np.complex_ )
 
+  gridImage = inverseFT(gridImageFT)
+
   # Remove grid image from original image
 
   print( '6. remove grid' )
 
   if resultImage is None:
     resultImage = image.copy()
+
+  for y in range(height):
+    for x in range(width):
+      if gridImage[y][x] > 16:
+        resultImage[y][x] = 0
 
   print( 'done' )
 
