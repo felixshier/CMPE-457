@@ -138,18 +138,18 @@ resultImage = None              # the final image
 def getForwardPixel(x, y, image1, image2, x_increment, y_increment):
   height = image.shape[0]
   width  = image.shape[1]
-  for k in range(min(height-y, width-x)):
-    if (image1[y + k*y_increment][x + k*x_increment] < 16):
-      nextPixel = image2[y + k*y_increment][x + k*x_increment]
+  for k in range(min(round((height-y)/y_increment), round((width-x)/x_increment))):
+    if (image1[y + round(k*y_increment)][x + round(k*x_increment)] < 16):
+      nextPixel = image2[y + round(k*y_increment)][x + round(k*x_increment)]
       return nextPixel
   return 0
 
 def getBackwardPixel(x, y, image1, image2, x_increment, y_increment):
   height = image.shape[0]
   width  = image.shape[1]
-  for k in range(min(y, x)):
-    if (image1[y - k*y_increment][x - k*x_increment] < 16):
-      nextPixel = image2[y - k*y_increment][x - k*x_increment]
+  for k in range(min(round(y/y_increment), round(x/x_increment))):
+    if (image1[y - round(k*y_increment)][x - round(k*x_increment)] < 16):
+      nextPixel = image2[y - round(k*y_increment)][x - round(k*x_increment)]
       return nextPixel
   return 0
 
@@ -240,11 +240,9 @@ def compute():
   gridLine1_distances = []
   gridLine2_distances = []
 
-  nonZeroVals_normal = [(u, v*width/height) for (u,v) in nonZeroVals_normal]
-
   for (u, v) in nonZeroVals_normal:
     # calculate distance and angle for each point
-    angle = math.atan2(v,u)
+    angle = math.atan2(v*width/height,u)
     distance = np.sqrt(u**2 + v**2)
     # ensure positive angles
     if angle < 0:
@@ -297,7 +295,7 @@ def compute():
 
   # y increment at which we will look for the next non-grid pixels
   # y component of searchAngle when x component is 1
-  y_increment = round(np.tan(searchAngle))
+  y_increment = np.tan(searchAngle)
 
   for y in range(height):
     for x in range(width):
