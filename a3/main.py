@@ -66,7 +66,7 @@ def compress( inputFile, outputFile ):
  
     outputBytes = bytearray()
     symbols = []
-    dictionary = []
+    uniqueSymbols = []
 
     # single-channel case
     if len(img.shape) == 2:
@@ -79,28 +79,29 @@ def compress( inputFile, outputFile ):
                 else:
                     f = struct.pack('>h', img[y,x]) - struct.pack('>h', img[y-1,x])
 
-                symbols.append( f )
+                symbols.append( str(f) )
             
             # create dictionary
             for symbol in symbols:
-                if symbol not in dictionary:
-                    dictionary.append(symbol)
+                if symbol not in uniqueSymbols:
+                    uniqueSymbols.append(symbol)
 
-            dictionary = {str(dictionary[i]): i for i in range(len(dictionary))}
+            dictionary = {uniqueSymbols[i]: i for i in range(len(uniqueSymbols))}
 
             # LZW encoding
             s = ''
             for symbol in symbols:
+                symbol = str(symbol)
                 if s + symbol in dictionary:
                     s = s + symbol
                 else:
                     outputBytes.append(dictionary[s])
-                    dictionary[dictionary.values()()[-1]] = s + symbol
+                    dictionary[list(dictionary.values())[-1]] = s + symbol
                     s = symbol
 
             outputBytes.append(dictionary[s])
                 
-    # multi-channel (R,G,B) case 
+    # multi-channel case 
     else:
         # loop through pixels
         for y in range(img.shape[0]):
@@ -113,23 +114,24 @@ def compress( inputFile, outputFile ):
                     else:
                         f = struct.pack('>h', img[y,x,c]) - struct.pack('>h', img[y-1,x,c])
 
-                    symbols.append( f )
+                    symbols.append( str(f) )
                 
                 # create dictionary
                 for symbol in symbols:
-                    if symbol not in dictionary:
-                        dictionary.append(symbol)
+                    if symbol not in uniqueSymbols:
+                        uniqueSymbols.append(symbol)
 
-                dictionary = {str(dictionary[i]): i for i in range(len(dictionary))}
+                dictionary = {uniqueSymbols[i]: i for i in range(len(uniqueSymbols))}
 
                 # LZW encoding
                 s = ''
                 for symbol in symbols:
+                    symbol = str(symbol)
                     if s + symbol in dictionary:
                         s = s + symbol
                     else:
                         outputBytes.append(dictionary[s])
-                        dictionary[dictionary.values()()[-1]] = s + symbol
+                        dictionary[list(dictionary.values())[-1]] = s + symbol
                         s = symbol
                 outputBytes.append(dictionary[s])
     
