@@ -65,11 +65,77 @@ def compress( inputFile, outputFile ):
     startTime = time.time()
  
     outputBytes = bytearray()
+    symbols = []
+    dictionary = []
 
-    for y in range(img.shape[0]):
-        for x in range(img.shape[1]):
-            for c in range(img.shape[2]):
-                outputBytes.append( img[y,x,c] )
+    # single-channel case
+    if len(img.shape) == 2:
+        # loop through pixels
+        for y in range(img.shape[0]):
+            for x in range(img.shape[1]):
+                # predictive encoding
+                if y == 0:
+                    f = struct.pack('>h', img[y,x])
+                else:
+                    f = struct.pack('>h', img[y,x]) - struct.pack('>h', img[y-1,x])
+
+                symbols.append( f )
+            
+            # create dictionary
+            for symbol in symbols:
+                if symbol not in dictionary:
+                    dictionary.append(symbol)
+
+            dictionary = {str(dictionary[i]): i for i in range(len(dictionary))}
+
+            # LZW encoding
+            s = ''
+            for symbol in symbols:
+                if s + symbol in dictionary:
+                    s = s + symbol
+                else:
+                    outputBytes.append(dictionary[s])
+                    dictionary[dictionary.values()()[-1]] = s + symbol
+                    s = symbol
+
+            outputBytes.append(dictionary[s])
+                
+    # multi-channel (R,G,B) case 
+    else:
+        # loop through pixels
+        for y in range(img.shape[0]):
+            for x in range(img.shape[1]):
+                # loop through channels
+                for c in range(img.shape[2]):
+                    # predictive encoding
+                    if y == 0:
+                        f = struct.pack('>h', img[y,x,c])
+                    else:
+                        f = struct.pack('>h', img[y,x,c]) - struct.pack('>h', img[y-1,x,c])
+
+                    symbols.append( f )
+                
+                # create dictionary
+                for symbol in symbols:
+                    if symbol not in dictionary:
+                        dictionary.append(symbol)
+
+                dictionary = {str(dictionary[i]): i for i in range(len(dictionary))}
+
+                # LZW encoding
+                s = ''
+                for symbol in symbols:
+                    if s + symbol in dictionary:
+                        s = s + symbol
+                    else:
+                        outputBytes.append(dictionary[s])
+                        dictionary[dictionary.values()()[-1]] = s + symbol
+                        s = symbol
+                outputBytes.append(dictionary[s])
+    
+
+
+
 
     endTime = time.time()
 
