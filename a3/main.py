@@ -116,7 +116,7 @@ def compress( inputFile, outputFile ):
                         s = f
         
         outputBytes += struct.pack('>H', int(dictionary.get(s)))
-        
+
     endTime = time.time()
 
     # Output the bytes
