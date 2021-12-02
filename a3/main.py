@@ -66,9 +66,9 @@ def compress( inputFile, outputFile ):
  
     outputBytes = bytearray()
 
-    dictionary = {struct.pack('>h', i) : i + 255 for i in range(-255, 256)}
+    dictionary = {str(i) : i + 255 for i in range(-255, 256)}
 
-    s = b''
+    s = ''
 
     # single-channel case
     if len(img.shape) == 2:
@@ -77,9 +77,11 @@ def compress( inputFile, outputFile ):
             for x in range(img.shape[1]):
                 # predictive encoding
                 if y == 0:
-                    f = struct.pack('>h', int(img[y,x]))
+                    f = int(img[y,x])
                 else:
-                    f = struct.pack('>h', int(img[y,x]) - int(img[y-1,x]))
+                    f = int(img[y,x]) - int(img[y-1,x])
+
+                f = str(f)
 
                 # LZW encoding
                 if s + f in dictionary:
@@ -95,16 +97,18 @@ def compress( inputFile, outputFile ):
                 
     # multi-channel case 
     else:
-        # loop through channels
-        for c in range(img.shape[2]):
-            # loop through pixels
-            for y in range(img.shape[0]):
-                for x in range(img.shape[1]):
+        # loop through pixels
+        for y in range(img.shape[0]):
+            for x in range(img.shape[1]):
+                # loop through channels
+                for c in range(img.shape[2]):
                     # predictive encoding
                     if y == 0:
-                        f = struct.pack('>h', int(img[y,x,c]))
+                        f = int(img[y,x,c])
                     else:
-                        f = struct.pack('>h', int(img[y,x,c]) - int(img[y-1,x,c]))
+                        f = int(img[y,x,c]) - int(img[y-1,x,c])
+                    
+                    f = str(f)
 
                     # LZW encoding
                     if (s + f) in dictionary:
@@ -172,11 +176,37 @@ def uncompress( inputFile, outputFile ):
 
     img = np.empty( [rows,columns,numChannels], dtype=np.uint8 )
 
+    dictionary = {i + 255 : str(i) for i in range(-255, 256)}
+
+    t = ''
+
     i = 0
+    index = inputBytes[i]
+    s = dictionary.get(index)
+    img[0,0,0] = int(s)
+    i += 1
+
+    print(len(inputBytes))
+    print(rows*columns*numChannels)
+
     for y in range(rows):
         for x in range(columns):
-            for c in range(numChannels):
-                img[y,x,c] = inputBytes[i]
+            for c in range(1, numChannels):
+                index = inputBytes[i]
+                
+                if index in dictionary:
+                    t = dictionary.get(index)
+                    dictionary[len(dictionary)] = s + t[0]
+                else:
+                    t = s + s[0]
+                    dictionary[len(dictionary)] = t
+                
+                if y == 0:
+                    img[y,x,c] = int(t)
+                else:
+                    img[y,x,c] = int(t) + img[y-1,x,c]
+                
+                s = t
                 i += 1
 
     endTime = time.time()
