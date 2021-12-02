@@ -65,8 +65,10 @@ def compress( inputFile, outputFile ):
     startTime = time.time()
  
     outputBytes = bytearray()
-    symbols = []
-    uniqueSymbols = []
+
+    dictionary = {struct.pack('>h', i) : i + 255 for i in range(-255, 256)}
+
+    s = b''
 
     # single-channel case
     if len(img.shape) == 2:
@@ -75,70 +77,46 @@ def compress( inputFile, outputFile ):
             for x in range(img.shape[1]):
                 # predictive encoding
                 if y == 0:
-                    f = struct.pack('>h', img[y,x])
+                    f = struct.pack('>h', int(img[y,x]))
                 else:
-                    f = struct.pack('>h', img[y,x]) - struct.pack('>h', img[y-1,x])
+                    f = struct.pack('>h', int(img[y,x]) - int(img[y-1,x]))
 
-                symbols.append( str(f) )
-            
-            # create dictionary
-            for symbol in symbols:
-                if symbol not in uniqueSymbols:
-                    uniqueSymbols.append(symbol)
-
-            dictionary = {uniqueSymbols[i]: i for i in range(len(uniqueSymbols))}
-
-            # LZW encoding
-            s = ''
-            for symbol in symbols:
-                symbol = str(symbol)
-                if s + symbol in dictionary:
-                    s = s + symbol
+                # LZW encoding
+                if s + f in dictionary:
+                    s = s + f
                 else:
-                    outputBytes.append(dictionary[s])
-                    dictionary[list(dictionary.values())[-1]] = s + symbol
-                    s = symbol
+                    outputBytes += struct.pack('>H', int(dictionary.get(s)))
+                    if len(dictionary) < 65536:
+                        dictionary[s + f] = len(dictionary)
+                    s = f
+                
+        outputBytes += struct.pack('>H', int(dictionary.get(s)))
 
-            outputBytes.append(dictionary[s])
                 
     # multi-channel case 
     else:
-        # loop through pixels
-        for y in range(img.shape[0]):
-            for x in range(img.shape[1]):
-                # loop through channels
-                for c in range(img.shape[2]):
+        # loop through channels
+        for c in range(img.shape[2]):
+            # loop through pixels
+            for y in range(img.shape[0]):
+                for x in range(img.shape[1]):
                     # predictive encoding
                     if y == 0:
-                        f = struct.pack('>h', img[y,x,c])
+                        f = struct.pack('>h', int(img[y,x,c]))
                     else:
-                        f = struct.pack('>h', img[y,x,c]) - struct.pack('>h', img[y-1,x,c])
+                        f = struct.pack('>h', int(img[y,x,c]) - int(img[y-1,x,c]))
 
-                    symbols.append( str(f) )
-                
-                # create dictionary
-                for symbol in symbols:
-                    if symbol not in uniqueSymbols:
-                        uniqueSymbols.append(symbol)
-
-                dictionary = {uniqueSymbols[i]: i for i in range(len(uniqueSymbols))}
-
-                # LZW encoding
-                s = ''
-                for symbol in symbols:
-                    symbol = str(symbol)
-                    if s + symbol in dictionary:
-                        s = s + symbol
+                    # LZW encoding
+                    if (s + f) in dictionary:
+                        s = s + f
                     else:
-                        outputBytes.append(dictionary[s])
-                        dictionary[list(dictionary.values())[-1]] = s + symbol
-                        s = symbol
-                outputBytes.append(dictionary[s])
-    
-
-
-
-
+                        outputBytes += struct.pack('>H', int(dictionary.get(s)))
+                        if len(dictionary) < 65536:
+                            dictionary[s + f] = len(dictionary)
+                        s = f
+        
+        outputBytes += struct.pack('>H', int(dictionary.get(s)))
+        
     endTime = time.time()
 
     # Output the bytes
