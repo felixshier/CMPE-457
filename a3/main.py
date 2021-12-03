@@ -205,17 +205,14 @@ def uncompress( inputFile, outputFile ):
 
     img = np.empty([rows,columns,numChannels], dtype=np.uint8)
 
-
     decode_dict = {i : struct.pack('>h', i-255) for i in range(511)}
 
     s = decode_dict[inputIndices[0]]
 
-    '''#start building a list of pixels to add to output image
-    img[0][0][0] = struct.unpack('>h', s)[0]'''
+    #start building a list of pixels to add to output image
     outPix = [struct.unpack('>h', s)[0]]
 
     # pixel # in output image
-    pN = 1
 
     for ndx in inputIndices[1:]:
 
@@ -229,37 +226,17 @@ def uncompress( inputFile, outputFile ):
         # add t to the image being constructed
         for i in range(0, len(t), 2):
 
-            y = pN // (columns*numChannels)
-            x = (pN - y*columns*numChannels) // numChannels
-            c = pN % numChannels
-
-            # reverse the predictive encoding from compression to get correct
-            # pixel value
-
-            if c == 0:
-                if x == 0:                      
-                    # diff with last col and channel of previous row
-                    img[y][x][c] = img[y-1][-1][-1] + struct.unpack('>h',t[i:i+2])[0]
-                else:
-                    # diff with pixel from previous col last channel
-                    img[y][x][c] = img[y][x-1][-1] + struct.unpack('>h',t[i:i+2])[0]
-            else:
-                # diff with pixel in previous channel
-                img[y][x][c] = img[y][x][c-1] + struct.unpack('>h',t[i:i+2])[0]
-                
-            pN += 1
             outPix.append(struct.unpack('>h',t[i:i+2])[0]+outPix[-1])
                 
         s = t
 
-    endTime = time.time()
     i = 0
     for y in range(rows):
         for x in range(columns):
             for c in range(numChannels):
                 img[y][x][c] = outPix[i]
                 i+=1
-
+    endTime = time.time()
     '''endTime = time.time()'''
     sys.stderr.write( 'Uncompression time %.2f seconds\n' % (endTime - startTime) )
 
